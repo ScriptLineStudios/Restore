@@ -4,8 +4,11 @@ import io
 from cryptography.fernet import Fernet
 import requests
 import config
+import gc
 
 app = Flask(__name__)
+
+relays = ["http://127.0.0.1:6000"]
 
 @app.route("/")
 def home():
@@ -13,9 +16,11 @@ def home():
 
 @app.route("/upload/<name>", methods=['POST'])
 def upload(name):
-    file = request.files['file']    
-    requests.post(f"{config.BACKEND_URL}/upload/{name}", files={"file": file})
-    return jsonify(sucess="Sucess!")
+    for index, relay in enumerate(relays):
+        gc.collect()
+        file = request.files['file']    
+        requests.post(f"{relay}/upload/{name}", files={"file": file})
+        return jsonify(realy=str(index))
 
 @app.route("/download/<file_name>/<key>",methods=['GET'])
 def download(file_name, key):

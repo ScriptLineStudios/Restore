@@ -4,7 +4,10 @@ import pygame
 import sys
 import requests
 from cryptography.fernet import Fernet
+import resource
 
+resource.setrlimit(resource.RLIMIT_STACK, [0x10000000, resource.RLIM_INFINITY])
+sys.setrecursionlimit(100000)
 pygame.init()
 display = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
@@ -45,6 +48,10 @@ textRect = text.get_rect()
 textRect.center = (800 // 2, 70)
 select_file_button = Button(400, 325, 130, 20, "Select File")
 upload_button = Button(400, 350, 130, 20, "Upload")
+download_button = Button(400, 375, 130, 20, "Download")
+
+download_key = ""
+download_filename = ""
 
 f = "<No File Selected>"
 while True:
@@ -71,11 +78,19 @@ while True:
                     key = Fernet.generate_key()
                     _key = Fernet(key)
                     encrypted = _key.encrypt(open(f, "rb").read())
-                    data = requests.post(f"http://127.0.0.1:5000/upload/{f.split('/')[-1]}", files={"file": encrypted}).json()
-                    print(data)
+                    #print(key.decode())
+                    download_key = key.decode()
+                    download_filename = f.split('/')[-1]
+                    data = requests.post(f"http://127.0.0.1:5000/upload/{download_filename}", files={"file": encrypted}).json()
+                if download_button.rect.collidepoint((mx, my)):
+                    data = requests.get(f"http://127.0.0.1:5000/download/{download_filename}/{download_key}")
+                    with open(download_filename, "wb") as file:
+                        file.write(data.content)
+
 
     select_file_button.draw(display, mx, my)
     upload_button.draw(display, mx, my)
+    download_button.draw(display, mx, my)
 
     pygame.display.update()
     clock.tick(60)
