@@ -15,9 +15,8 @@ pygame.display.set_caption("Restore;")
 
 
 def prompt_file():
-    """Create a Tk file dialog and cleanup when finished"""
     top = tkinter.Tk()
-    top.withdraw()  # hide window
+    top.withdraw() 
     file_name = tkinter.filedialog.askopenfilename(parent=top)
     top.destroy()
     return file_name
@@ -78,15 +77,14 @@ while True:
                     key = Fernet.generate_key()
                     _key = Fernet(key)
                     encrypted = _key.encrypt(open(f, "rb").read())
-                    #print(key.decode())
                     download_key = key.decode()
                     download_filename = f.split('/')[-1]
                     data = requests.post(f"http://127.0.0.1:5000/upload/{download_filename}", files={"file": encrypted}).json()
+                    print(data)
                 if download_button.rect.collidepoint((mx, my)):
                     data = requests.get(f"http://127.0.0.1:5000/download/{download_filename}/{download_key}")
                     with open(download_filename, "wb") as file:
                         file.write(data.content)
-
 
     select_file_button.draw(display, mx, my)
     upload_button.draw(display, mx, my)

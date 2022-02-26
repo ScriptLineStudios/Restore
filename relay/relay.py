@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, send_file
 from werkzeug.utils import secure_filename
 import os
-import shutil
+import requests
 
 app = Flask(__name__)
 
@@ -20,4 +20,6 @@ def download(file_name):
 	
 
 if __name__ == "__main__":
+    address = "http://127.0.0.1:6000"
+    #requests.post(f"http://127.0.0.1:5000/add_relay/{address}")
     app.run(debug=True, port=6000)
