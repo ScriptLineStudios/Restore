@@ -2,21 +2,13 @@ import tkinter
 import tkinter.filedialog
 import pygame
 import sys
-import socket
-
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(("127.0.0.1", 5000))
+import requests
 
 pygame.init()
 display = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 pygame.display.set_caption("Restore;")
 
-font = pygame.font.Font('freesansbold.ttf', 48)
-font_small = pygame.font.Font('freesansbold.ttf', 16)
-text = font.render('Welcome', True, (0,0,0))
-textRect = text.get_rect()
-textRect.center = (800 // 2, 70)
 
 def prompt_file():
     """Create a Tk file dialog and cleanup when finished"""
@@ -45,6 +37,11 @@ class Button:
             pygame.draw.rect(display, (140, 140, 140), self.rect)
             display.blit(self.text, self.textRect)
 
+font = pygame.font.Font('freesansbold.ttf', 48)
+font_small = pygame.font.Font('freesansbold.ttf', 16)
+text = font.render('Welcome', True, (0,0,0))
+textRect = text.get_rect()
+textRect.center = (800 // 2, 70)
 select_file_button = Button(400, 325, 130, 20, "Select File")
 upload_button = Button(400, 350, 130, 20, "Upload")
 
@@ -70,16 +67,8 @@ while True:
                 if select_file_button.rect.collidepoint((mx, my)):
                     f = prompt_file()
                 if upload_button.rect.collidepoint((mx, my)):
-                    client.send(f.split("/")[-1].encode())
-
-                    with open(f, "rb") as file:
-                        while True:
-                            bytes_read = file.read(2048)
-                            #print("Reading...")
-                            if not bytes_read:
-                                break
-
-                            client.sendall(bytes_read)
+                    data = requests.post("http://127.0.0.1:5000/upload", files={"file": open(f, "rb")}).json()
+                    print(data)
 
     select_file_button.draw(display, mx, my)
     upload_button.draw(display, mx, my)
