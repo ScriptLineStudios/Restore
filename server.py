@@ -11,14 +11,11 @@ app = Flask(__name__)
 def home():
     return render_template("home.html")
 
-@app.route("/upload", methods=['POST'])
-def upload():
+@app.route("/upload/<name>", methods=['POST'])
+def upload(name):
     file = request.files['file']    
-    key = Fernet.generate_key()
-    f = Fernet(key)
-    encrypted = f.encrypt(file.read())
-    requests.post(f"{config.BACKEND_URL}/upload/{file.filename}", files={"file": encrypted})
-    return jsonify(download_url=f"127.0.0.1:5000/download/{file.filename}/{str(key.decode())}")
+    requests.post(f"{config.BACKEND_URL}/upload/{name}", files={"file": file})
+    return jsonify(sucess="Sucess!")
 
 @app.route("/download/<file_name>/<key>",methods=['GET'])
 def download(file_name, key):

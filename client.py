@@ -3,6 +3,7 @@ import tkinter.filedialog
 import pygame
 import sys
 import requests
+from cryptography.fernet import Fernet
 
 pygame.init()
 display = pygame.display.set_mode((800, 600))
@@ -67,7 +68,10 @@ while True:
                 if select_file_button.rect.collidepoint((mx, my)):
                     f = prompt_file()
                 if upload_button.rect.collidepoint((mx, my)):
-                    data = requests.post("http://127.0.0.1:5000/upload", files={"file": open(f, "rb")}).json()
+                    key = Fernet.generate_key()
+                    _key = Fernet(key)
+                    encrypted = _key.encrypt(open(f, "rb").read())
+                    data = requests.post(f"http://127.0.0.1:5000/upload/{f.split('/')[-1]}", files={"file": encrypted}).json()
                     print(data)
 
     select_file_button.draw(display, mx, my)
