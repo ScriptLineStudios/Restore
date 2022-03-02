@@ -4,29 +4,34 @@ import io
 from cryptography.fernet import Fernet
 import requests
 import config
-import gc
+import pickle
 
 app = Flask(__name__)
 
-relays = ["http://127.0.0.1:6000", "http://192.168.68.120:6000"]
+pickle.dump([], open("relays.pickle", "wb"))
 
 @app.route("/")
 def home():
     return render_template("home.html")
 
-@app.route("/add_relay/address", methods=['POST'])
+@app.route("/add_relay/<address>", methods=['POST'])
 def add_relay(address):
-    relays.append(address)
+    relays = pickle.load(open("relays.pickle","rb"))
+    relays.append("http://" + address)
+    print(relays)
+    pickle.dump(relays, open("relays.pickle", "wb"))
     return "", 200
 
 @app.route("/upload/<name>", methods=['POST'])
 def upload(name):
     file = request.files['file']    
+    relays = pickle.load(open("relays.pickle", "rb"))
+    print(relays)
     for index, relay in enumerate(relays):
         try:
             requests.post(f"{relay}/upload/{name}", files={"file": file})
-        except:
-            pass
+        except Exception as e:
+            print(e)
     return jsonify(sucess="Success")
 
 @app.route("/download/<file_name>/<key>",methods=['GET'])

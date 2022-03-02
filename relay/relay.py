@@ -20,6 +20,8 @@ def download(file_name):
 	
 
 if __name__ == "__main__":
-    address = "http://127.0.0.1:6000"
-    #requests.post(f"http://127.0.0.1:5000/add_relay/{address}")
+    address = "127.0.0.1:6000"
+    data = requests.post(f"http://127.0.0.1:5000/add_relay/{address}")
+    print(data)
+    print("Request Made")
     app.run(debug=True, port=6000)
