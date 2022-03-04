@@ -5,6 +5,7 @@ from cryptography.fernet import Fernet
 import requests
 import config
 import pickle
+import hashlib
 
 app = Flask(__name__)
 
@@ -29,23 +30,28 @@ def upload(name):
     print(relays)
     for index, relay in enumerate(relays):
         try:
-            #print(file)
             requests.post(f"{relay}/upload/{name}", files={"file": file})
         except Exception as e:
             print(e)
     return jsonify(sucess="Success")
 
-@app.route("/download/<file_name>/<key>",methods=['GET'])
-def download(file_name, key):
+@app.route("/download/<hash_encrypted>/<file_name>/<key>",methods=['GET'])
+def download(hash_encrypted, file_name, key):
     relays = pickle.load(open("relays.pickle", "rb"))
     for relay in relays:
         try:
             print(relays)
             r = requests.get(f"{relay}/download/{file_name}")
-            f = Fernet(key)
-            data = f.decrypt(r.content)
-            return send_file(io.BytesIO(data), as_attachment=True, download_name=file_name)
-        except:
+            relay_hash = hashlib.sha256(r.content).hexdigest()
+            if str(relay_hash) == str(hash_encrypted):
+                print("Allowing file download")
+                f = Fernet(key)
+                data = f.decrypt(r.content) #TODO: Remove server side decryption!!!! IMPORTANT
+                return send_file(io.BytesIO(data), as_attachment=True, download_name=file_name)
+            else:
+                print("File has been modified relay side, skipping...")
+                return "", 200
+        except Exception as e:
             continue
 
     return "", 200

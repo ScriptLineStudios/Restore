@@ -4,6 +4,8 @@ import sys
 import requests
 from cryptography.fernet import Fernet
 import resource
+import pickle
+import hashlib
 
 resource.setrlimit(resource.RLIMIT_STACK, [0x10000000, resource.RLIM_INFINITY])
 sys.setrecursionlimit(100000)
@@ -56,8 +58,11 @@ f = "<No File Selected>"
 download_keys = []
 
 is_on_download_page = False
-
 download_buttons = []
+try:
+    download_keys = pickle.load(open("save.pickle", "rb"))
+except:
+    download_keys = []
 while True:
     display.fill(pygame.color.Color("grey"))
     mx, my = pygame.mouse.get_pos()
@@ -66,6 +71,7 @@ while True:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            pickle.dump(download_keys, open("save.pickle", "wb"))
             pygame.quit()
             sys.exit()
             exit()
@@ -79,11 +85,12 @@ while True:
                         key = Fernet.generate_key()
                         _key = Fernet(key)
                         encrypted = _key.encrypt(open(f, "rb").read())
+                        hash_encrypted = hashlib.sha256(encrypted).hexdigest()
+                        print(hash_encrypted)
                         download_key = key.decode()
                         download_filename = f.split('/')[-1]
                         data = requests.post(f"http://127.0.0.1:5000/upload/{download_filename}", files={"file": encrypted}).json()
-                        print(data)
-                        download_keys.append(f"http://127.0.0.1:5000/download/{download_filename}/{download_key}")
+                        download_keys.append(f"http://127.0.0.1:5000/download/{hash_encrypted}/{download_filename}/{download_key}")
                 if download_button.rect.collidepoint((mx, my)):
                     is_on_download_page = True
 
@@ -93,7 +100,7 @@ while True:
                     if button.rect.collidepoint((mx, my)):
                         print(button.download_url)
                         data = requests.get(button.download_url)
-                        with open(download_filename, "wb") as file:
+                        with open(button.download_url.split("/")[-2], "wb") as file:    
                             file.write(data.content)
     download_buttons = []
 
