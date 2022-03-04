@@ -96,12 +96,12 @@ while True:
 
 
                 for button in download_buttons:
-                    print(button)
                     if button.rect.collidepoint((mx, my)):
-                        print(button.download_url)
+                        print(button.download_url.split("/")[-1])
                         data = requests.get(button.download_url)
                         with open(button.download_url.split("/")[-2], "wb") as file:    
-                            file.write(data.content)
+                            f = Fernet(button.download_url.split("/")[-1])
+                            file.write(f.decrypt(data.content))
     download_buttons = []
 
     if not is_on_download_page:

@@ -19,7 +19,6 @@ def home():
 def add_relay(address):
     relays = pickle.load(open("relays.pickle","rb"))
     relays.append("http://" + address)
-    #print(len(relays))
     pickle.dump(relays, open("relays.pickle", "wb"))
     return "", 200
 
@@ -40,20 +39,16 @@ def download(hash_encrypted, file_name, key):
     relays = pickle.load(open("relays.pickle", "rb"))
     for relay in relays:
         try:
-            print(relays)
             r = requests.get(f"{relay}/download/{file_name}")
             relay_hash = hashlib.sha256(r.content).hexdigest()
             if str(relay_hash) == str(hash_encrypted):
                 print("Allowing file download")
-                f = Fernet(key)
-                data = f.decrypt(r.content) #TODO: Remove server side decryption!!!! IMPORTANT
-                return send_file(io.BytesIO(data), as_attachment=True, download_name=file_name)
+                return send_file(io.BytesIO(r.content), as_attachment=True, download_name=file_name)
             else:
                 print("File has been modified relay side, skipping...")
                 return "", 200
         except Exception as e:
             continue
-
     return "", 200
 
 if __name__ == "__main__":
