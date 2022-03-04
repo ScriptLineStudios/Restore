@@ -18,7 +18,7 @@ def home():
 def add_relay(address):
     relays = pickle.load(open("relays.pickle","rb"))
     relays.append("http://" + address)
-    print(relays)
+    #print(len(relays))
     pickle.dump(relays, open("relays.pickle", "wb"))
     return "", 200
 
@@ -29,6 +29,7 @@ def upload(name):
     print(relays)
     for index, relay in enumerate(relays):
         try:
+            #print(file)
             requests.post(f"{relay}/upload/{name}", files={"file": file})
         except Exception as e:
             print(e)
@@ -36,14 +37,18 @@ def upload(name):
 
 @app.route("/download/<file_name>/<key>",methods=['GET'])
 def download(file_name, key):
+    relays = pickle.load(open("relays.pickle", "rb"))
     for relay in relays:
         try:
+            print(relays)
             r = requests.get(f"{relay}/download/{file_name}")
             f = Fernet(key)
             data = f.decrypt(r.content)
             return send_file(io.BytesIO(data), as_attachment=True, download_name=file_name)
         except:
             continue
+
+    return "", 200
 
 if __name__ == "__main__":
     app.run(debug=True)

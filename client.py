@@ -1,4 +1,3 @@
-import tkinter
 import tkinter.filedialog
 import pygame
 import sys
@@ -12,7 +11,6 @@ pygame.init()
 display = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 pygame.display.set_caption("Restore;")
-
 
 def prompt_file():
     top = tkinter.Tk()
@@ -31,6 +29,7 @@ class Button:
         self.textRect = self.text.get_rect()
         self.textRect.center = (self.x, self.y)
         self.rect = pygame.Rect(self.x-self.width/2, self.y-self.height/2, self.width, self.height)
+        self.download_url = ""
 
     def draw(self, display, mx, my):
         if self.rect.collidepoint((mx,my)):
@@ -53,42 +52,68 @@ download_key = ""
 download_filename = ""
 
 f = "<No File Selected>"
+
+download_keys = []
+
+is_on_download_page = False
+
+download_buttons = []
 while True:
     display.fill(pygame.color.Color("grey"))
     mx, my = pygame.mouse.get_pos()
 
     display.blit(text, textRect)
 
-    selected_file = font_small.render(f, True, (0,0,0))
-    selected_file_rect = selected_file.get_rect()
-    selected_file_rect.center = (800 // 2, 300)
-    display.blit(selected_file, selected_file_rect)
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+            exit()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if select_file_button.rect.collidepoint((mx, my)):
                     f = prompt_file()
                 if upload_button.rect.collidepoint((mx, my)):
-                    key = Fernet.generate_key()
-                    _key = Fernet(key)
-                    encrypted = _key.encrypt(open(f, "rb").read())
-                    download_key = key.decode()
-                    download_filename = f.split('/')[-1]
-                    data = requests.post(f"http://127.0.0.1:5000/upload/{download_filename}", files={"file": encrypted}).json()
-                    print(data)
+                    if not is_on_download_page:
+                        key = Fernet.generate_key()
+                        _key = Fernet(key)
+                        encrypted = _key.encrypt(open(f, "rb").read())
+                        download_key = key.decode()
+                        download_filename = f.split('/')[-1]
+                        data = requests.post(f"http://127.0.0.1:5000/upload/{download_filename}", files={"file": encrypted}).json()
+                        print(data)
+                        download_keys.append(f"http://127.0.0.1:5000/download/{download_filename}/{download_key}")
                 if download_button.rect.collidepoint((mx, my)):
-                    data = requests.get(f"http://127.0.0.1:5000/download/{download_filename}/{download_key}")
-                    with open(download_filename, "wb") as file:
-                        file.write(data.content)
+                    is_on_download_page = True
 
-    select_file_button.draw(display, mx, my)
-    upload_button.draw(display, mx, my)
-    download_button.draw(display, mx, my)
+
+                for button in download_buttons:
+                    print(button)
+                    if button.rect.collidepoint((mx, my)):
+                        print(button.download_url)
+                        data = requests.get(button.download_url)
+                        with open(download_filename, "wb") as file:
+                            file.write(data.content)
+    download_buttons = []
+
+    if not is_on_download_page:
+        select_file_button.draw(display, mx, my)
+        upload_button.draw(display, mx, my)
+        download_button.draw(display, mx, my)
+
+        selected_file = font_small.render(f, True, (0,0,0))
+        selected_file_rect = selected_file.get_rect()
+        selected_file_rect.center = (800 // 2, 300)
+        display.blit(selected_file, selected_file_rect)
+    else:
+        for index, key in enumerate(download_keys):
+            button = Button(400, 200+index*4, 130, 20, key.split("/")[-2])
+            button.download_url = key
+            download_buttons.append(button)
+
+    for download_button in download_buttons:
+        download_button.draw(display, mx, my)
 
     pygame.display.update()
     clock.tick(60)
